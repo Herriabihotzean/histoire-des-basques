@@ -1,83 +1,49 @@
 "use strict";
-const HB_KEY="herria_langue";
-const HB_DEFAULT="fr";
-const HB_HISTORY=true;
-const HB_TRANSLATIONS={"eu": {"← retour à l’accueil": "← harrera-orrira itzuli", "haut de page ↑": "orriaren gaina ↑", "Histoire des Basques — Herria Bihotzean": "Eskualdunen istoria — Herria Bihotzean"}, "be": {"← retour à l’accueil": "← tourna à l’acuèlh", "haut de page ↑": "cap de pagine ↑", "Histoire des Basques — Herria Bihotzean": "Istoère deus Bàscous — Herria Bihotzean"}};
-const HB_LABELS={"fr": {"fr": "français", "eu": "basque", "be": "béarnais"}, "eu": {"fr": "frantsesez", "eu": "eskuaraz", "be": "biarnesez"}, "be": {"fr": "francés", "eu": "bascou", "be": "biarnés"}};
-let hbPageLanguage=null;
-function hbGeneralLanguage(){const l=localStorage.getItem(HB_KEY);return l==="eu"?"eu":"fr";}
-function hbCurrentLanguage(){return HB_HISTORY?(hbPageLanguage||hbGeneralLanguage()):hbGeneralLanguage();}
-function hbLookup(text,lang){if(lang==="fr")return text;const clean=text.trim();const dict=HB_TRANSLATIONS[lang]||{};if(dict[clean])return text.replace(clean,dict[clean]);const m=clean.match(/^(\d+\.\s*)(.+)$/);if(m&&dict[m[2]])return text.replace(clean,m[1]+dict[m[2]]);return text;}
-function hbTranslateNode(root=document.body,lang=hbCurrentLanguage()){
- const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
- nodes.forEach(n=>{if(!n.parentElement||["SCRIPT","STYLE","TEXTAREA"].includes(n.parentElement.tagName))return;if(n.parentElement.closest('.language-switcher'))return;const original=n.__hbOriginal??n.nodeValue;n.__hbOriginal=original;n.nodeValue=lang==="fr"?original:hbLookup(original,lang);});
- root.querySelectorAll?.('[placeholder],[title],[aria-label],[alt]').forEach(el=>{for(const a of ['placeholder','title','aria-label','alt']){if(!el.hasAttribute(a))continue;const k='hbOriginal'+a;el.dataset[k]=el.dataset[k]||el.getAttribute(a);el.setAttribute(a,lang==="fr"?el.dataset[k]:hbLookup(el.dataset[k],lang));}});
- document.documentElement.lang=lang==="eu"?"eu":lang==="be"?"oc":"fr";
- const t=document.querySelector('title');if(t){t.dataset.hbOriginal=t.dataset.hbOriginal||t.textContent;t.textContent=lang==="fr"?t.dataset.hbOriginal:hbLookup(t.dataset.hbOriginal,lang);}
+const HB_KEY = "herria_langue";
+const HB_LABELS = {
+  fr: { fr: "français", eu: "basque", be: "béarnais" },
+  eu: { fr: "frantsesez", eu: "eskuaraz", be: "biarnesez" },
+  be: { fr: "francés", eu: "bascou", be: "biarnés" }
+};
+const HB_LISTEN = { fr: "écouter", eu: "entzun", be: "escouta" };
+let hbTextLanguage = "fr";
+
+function hbGeneralLanguage() { return localStorage.getItem(HB_KEY) === "eu" ? "eu" : "fr"; }
+function hbUpdateButtons() {
+  const labels = HB_LABELS[hbTextLanguage] || HB_LABELS.fr;
+  document.querySelectorAll(".language-choice").forEach(button => {
+    const code = button.dataset.lang;
+    button.querySelector(".language-label").textContent = labels[code];
+    const active = code === hbTextLanguage;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  const listen = document.querySelector(".audio-open-button");
+  if (listen) listen.textContent = HB_LISTEN[hbTextLanguage];
+  const home = document.querySelector(".floating-home");
+  if (home) home.textContent = hbTextLanguage === "eu" ? "harrera" : hbTextLanguage === "be" ? "acuèlh" : "accueil";
 }
-function hbBuildSwitcher(){
- if(document.querySelector('.language-switcher'))return;
- const lang=hbCurrentLanguage();
- const nav=document.createElement('nav');
- nav.className='language-switcher';
- nav.setAttribute('aria-label','Choix de la langue');
- const langs=HB_HISTORY?['fr','eu','be']:['fr','eu'];
- const imgs={fr:'blason-france.svg',eu:'blason-navarre.svg',be:'blason-bearn.svg'};
- for(const l of langs){
-  const b=document.createElement('button');
-  b.type='button';
-  b.className='language-choice';
-  b.dataset.lang=l;
-  const image=document.createElement('img');
-  image.src=imgs[l];
-  image.alt='';
-  const label=document.createElement('span');
-  label.className='language-label';
-  label.textContent=HB_LABELS[lang][l];
-  b.append(image,label);
-  b.addEventListener('click',()=>hbSetLanguage(l));
-  nav.appendChild(b);
- }
- document.body.insertBefore(nav,document.body.firstChild);
+function hbSetTextLanguage(language) {
+  hbTextLanguage = ["fr","eu","be"].includes(language) ? language : "fr";
+  if (hbTextLanguage !== "be") localStorage.setItem(HB_KEY, hbTextLanguage);
+  document.querySelectorAll("[data-history-lang]").forEach(section => { section.hidden = section.dataset.historyLang !== hbTextLanguage; });
+  document.documentElement.lang = hbTextLanguage === "eu" ? "eu" : hbTextLanguage === "be" ? "oc" : "fr";
+  hbUpdateButtons();
+  document.dispatchEvent(new CustomEvent("herria-language-change", { detail: { lang: hbTextLanguage } }));
 }
-function hbUpdateButtons(lang){
- const labels=HB_LABELS[lang]||HB_LABELS.fr;
- document.querySelectorAll('.language-choice').forEach(b=>{
-  const label=b.querySelector('.language-label');
-  if(label)label.textContent=labels[b.dataset.lang]||'';
-  b.classList.toggle('active',b.dataset.lang===lang);
-  b.setAttribute('aria-pressed',b.dataset.lang===lang?'true':'false');
-  b.setAttribute('aria-label',labels[b.dataset.lang]||'');
- });
+function hbBuildSwitcher() {
+  const nav=document.createElement("nav"); nav.className="language-switcher"; nav.setAttribute("aria-label","Langues");
+  const images={fr:"blason-france.svg",eu:"blason-navarre.svg",be:"blason-bearn.svg"};
+  ["fr","eu","be"].forEach(code=>{
+    const button=document.createElement("button"); button.type="button"; button.className="language-choice"; button.dataset.lang=code;
+    button.innerHTML=`<img src="${images[code]}" alt=""><span class="language-label"></span>`;
+    button.addEventListener("click",()=>hbSetTextLanguage(code)); nav.appendChild(button);
+  });
+  return nav;
 }
-function hbSetLanguage(lang){
- if(!['fr','eu','be'].includes(lang))lang='fr';
- if(HB_HISTORY){
-  hbPageLanguage=lang;
-  if(lang!=='be')localStorage.setItem(HB_KEY,lang);
-  document.querySelectorAll('[data-history-lang]').forEach(s=>s.hidden=s.dataset.historyLang!==lang);
- }else{
-  if(lang==='be')lang='fr';
-  localStorage.setItem(HB_KEY,lang);
- }
- hbTranslateNode(document.body,lang);
- hbUpdateButtons(lang);
- document.dispatchEvent(new CustomEvent('herria-language-change',{detail:{lang}}));
-}
-document.addEventListener('DOMContentLoaded',()=>{
- hbBuildSwitcher();
- let lang=HB_HISTORY?hbGeneralLanguage():hbCurrentLanguage();
- if(HB_HISTORY)hbPageLanguage=lang;
- if(HB_HISTORY)document.querySelectorAll('[data-history-lang]').forEach(s=>s.hidden=s.dataset.historyLang!==lang);
- hbTranslateNode(document.body,lang);
- hbUpdateButtons(lang);
- const obs=new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1||n.nodeType===3)hbTranslateNode(n.nodeType===1?n:n.parentElement,lang);});
- obs.observe(document.body,{childList:true,subtree:true});
- document.addEventListener('herria-language-change',e=>{lang=e.detail.lang;hbUpdateButtons(lang);});
- window.addEventListener('storage',e=>{
-  if(e.key!==HB_KEY||HB_HISTORY)return;
-  const next=e.newValue==='eu'?'eu':'fr';
-  hbTranslateNode(document.body,next);
-  hbUpdateButtons(next);
- });
+document.addEventListener("DOMContentLoaded",()=>{
+  hbTextLanguage=hbGeneralLanguage();
+  const sticky=document.querySelector(".sticky-language-audio");
+  sticky.insertBefore(hbBuildSwitcher(),sticky.firstChild);
+  hbSetTextLanguage(hbTextLanguage);
 });
