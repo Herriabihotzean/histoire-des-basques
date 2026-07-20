@@ -4,8 +4,9 @@ const HB_DEFAULT="fr";
 const HB_HISTORY=true;
 const HB_TRANSLATIONS={"eu": {"← retour à l’accueil": "← harrera-orrira itzuli", "haut de page ↑": "orriaren gaina ↑", "Histoire des Basques — Herria Bihotzean": "Eskualdunen istoria — Herria Bihotzean"}, "be": {"← retour à l’accueil": "← tourna à l’acuèlh", "haut de page ↑": "cap de pagine ↑", "Histoire des Basques — Herria Bihotzean": "Istoère deus Bàscous — Herria Bihotzean"}};
 const HB_LABELS={"fr": {"fr": "français", "eu": "basque", "be": "béarnais"}, "eu": {"fr": "frantsesez", "eu": "eskuaraz", "be": "biarnesez"}, "be": {"fr": "francés", "eu": "bascou", "be": "biarnés"}};
+let hbPageLanguage=null;
 function hbGeneralLanguage(){const l=localStorage.getItem(HB_KEY);return l==="eu"?"eu":"fr";}
-function hbCurrentLanguage(){if(HB_HISTORY){const s=sessionStorage.getItem("herria_histoire_langue");if(["fr","eu","be"].includes(s))return s;}return hbGeneralLanguage();}
+function hbCurrentLanguage(){return HB_HISTORY?(hbPageLanguage||hbGeneralLanguage()):hbGeneralLanguage();}
 function hbLookup(text,lang){if(lang==="fr")return text;const clean=text.trim();const dict=HB_TRANSLATIONS[lang]||{};if(dict[clean])return text.replace(clean,dict[clean]);const m=clean.match(/^(\d+\.\s*)(.+)$/);if(m&&dict[m[2]])return text.replace(clean,m[1]+dict[m[2]]);return text;}
 function hbTranslateNode(root=document.body,lang=hbCurrentLanguage()){
  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);const nodes=[];while(walker.nextNode())nodes.push(walker.currentNode);
@@ -49,5 +50,34 @@ function hbUpdateButtons(lang){
   b.setAttribute('aria-label',labels[b.dataset.lang]||'');
  });
 }
-function hbSetLanguage(lang){if(HB_HISTORY){sessionStorage.setItem('herria_histoire_langue',lang);if(lang!=='be')localStorage.setItem(HB_KEY,lang);document.querySelectorAll('[data-history-lang]').forEach(s=>s.hidden=s.dataset.historyLang!==lang);}else{localStorage.setItem(HB_KEY,lang);}hbTranslateNode(document.body,lang);hbUpdateButtons(lang);document.dispatchEvent(new CustomEvent('herria-language-change',{detail:{lang}}));}
-document.addEventListener('DOMContentLoaded',()=>{hbBuildSwitcher();let lang=hbCurrentLanguage();if(HB_HISTORY)document.querySelectorAll('[data-history-lang]').forEach(s=>s.hidden=s.dataset.historyLang!==lang);hbTranslateNode(document.body,lang);hbUpdateButtons(lang);const obs=new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1||n.nodeType===3)hbTranslateNode(n.nodeType===1?n:n.parentElement,lang);});obs.observe(document.body,{childList:true,subtree:true});document.addEventListener('herria-language-change',e=>lang=e.detail.lang);});
+function hbSetLanguage(lang){
+ if(!['fr','eu','be'].includes(lang))lang='fr';
+ if(HB_HISTORY){
+  hbPageLanguage=lang;
+  if(lang!=='be')localStorage.setItem(HB_KEY,lang);
+  document.querySelectorAll('[data-history-lang]').forEach(s=>s.hidden=s.dataset.historyLang!==lang);
+ }else{
+  if(lang==='be')lang='fr';
+  localStorage.setItem(HB_KEY,lang);
+ }
+ hbTranslateNode(document.body,lang);
+ hbUpdateButtons(lang);
+ document.dispatchEvent(new CustomEvent('herria-language-change',{detail:{lang}}));
+}
+document.addEventListener('DOMContentLoaded',()=>{
+ hbBuildSwitcher();
+ let lang=HB_HISTORY?hbGeneralLanguage():hbCurrentLanguage();
+ if(HB_HISTORY)hbPageLanguage=lang;
+ if(HB_HISTORY)document.querySelectorAll('[data-history-lang]').forEach(s=>s.hidden=s.dataset.historyLang!==lang);
+ hbTranslateNode(document.body,lang);
+ hbUpdateButtons(lang);
+ const obs=new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)if(n.nodeType===1||n.nodeType===3)hbTranslateNode(n.nodeType===1?n:n.parentElement,lang);});
+ obs.observe(document.body,{childList:true,subtree:true});
+ document.addEventListener('herria-language-change',e=>{lang=e.detail.lang;hbUpdateButtons(lang);});
+ window.addEventListener('storage',e=>{
+  if(e.key!==HB_KEY||HB_HISTORY)return;
+  const next=e.newValue==='eu'?'eu':'fr';
+  hbTranslateNode(document.body,next);
+  hbUpdateButtons(next);
+ });
+});

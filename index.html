@@ -3,7 +3,115 @@
 
 .language-choice .language-label{display:block!important;visibility:visible!important;opacity:1!important;position:static!important;width:auto!important;height:auto!important;overflow:visible!important;margin:0!important;padding:0!important;color:inherit!important;font-family:Georgia,"Times New Roman",serif!important;font-size:.78rem!important;font-weight:400!important;line-height:1.2!important;white-space:nowrap!important;text-indent:0!important;text-transform:none!important}
 @media(max-width:520px){.language-choice .language-label{font-size:.72rem!important}}
-</style></head><body><div class="fond"><nav class="barre"><a class="bouton" href="https://herriabihotzean.github.io/herriabihotzean-site/">← retour à l’accueil</a><a class="bouton" href="#haut">haut de page ↑</a></nav><div id="haut"></div><section data-history-lang="fr"><article><p>HISTOIRE DES BASQUES</p>
+
+/* Barre fixe des langues et de l'écoute */
+.sticky-language-audio{
+    position:sticky;
+    top:0;
+    z-index:5000;
+    width:100%;
+    padding:5px 10px 7px;
+    background:rgba(20,55,32,.97);
+    color:#fff;
+    box-shadow:0 3px 12px rgba(0,0,0,.28);
+}
+.sticky-language-audio .language-switcher{
+    position:static;
+    z-index:auto;
+    margin:0 auto 3px;
+    padding:2px;
+}
+.audio-controls{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:5px;
+}
+.audio-open-button{
+    appearance:none;
+    border:1px solid rgba(255,255,255,.82);
+    border-radius:999px;
+    padding:4px 13px;
+    background:rgba(255,255,255,.12);
+    color:#fff;
+    font:inherit;
+    font-size:.82rem;
+    cursor:pointer;
+}
+.audio-open-button:hover,
+.audio-open-button:focus-visible{
+    background:rgba(255,255,255,.22);
+}
+.audio-panel{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    width:min(690px,100%);
+    margin:0 auto;
+}
+.audio-panel[hidden]{display:none!important}
+.audio-panel audio{
+    width:min(480px,calc(100% - 118px));
+    height:34px;
+}
+.audio-language-picker{
+    display:flex;
+    gap:4px;
+    flex:0 0 auto;
+}
+.audio-language-button{
+    appearance:none;
+    min-width:32px;
+    padding:4px 5px;
+    border:1px solid rgba(255,255,255,.7);
+    border-radius:5px;
+    background:transparent;
+    color:#fff;
+    font:inherit;
+    font-size:.7rem;
+    cursor:pointer;
+}
+.audio-language-button.active{
+    background:#fff;
+    color:rgb(20,55,32);
+    font-weight:bold;
+}
+@media(max-width:700px){
+    article p{
+        text-align:justify;
+        -webkit-hyphens:auto;
+        hyphens:auto;
+        overflow-wrap:break-word;
+        word-break:normal;
+    }
+    .sticky-language-audio{
+        padding:3px 5px 5px;
+    }
+    .sticky-language-audio .language-switcher{
+        gap:7px;
+        margin-bottom:1px;
+    }
+    .audio-open-button{
+        padding:3px 11px;
+        font-size:.76rem;
+    }
+    .audio-panel{
+        gap:5px;
+    }
+    .audio-panel audio{
+        width:calc(100% - 105px);
+        min-width:0;
+        height:32px;
+    }
+    .audio-language-button{
+        min-width:29px;
+        padding:3px 3px;
+        font-size:.64rem;
+    }
+}
+
+</style></head><body><div class="fond"><nav class="barre"><a class="bouton" href="https://herriabihotzean.github.io/herriabihotzean-site/">← retour à l’accueil</a><a class="bouton" href="#haut">haut de page ↑</a></nav><div id="haut"></div><section data-history-lang="fr" lang="fr"><article><p>HISTOIRE DES BASQUES</p>
 <p>—</p>
 <table>
 <colgroup>
@@ -383,7 +491,7 @@ pour nous et notre conversion !</p>
 2016.</p>
 <p>Archives départementales de Pyrénées-Atlantiques.</p>
 <p><img src="media-fr/media/image10.png" style="width:1.18113in;height:1.29921in"/></p>
-</article></section><section data-history-lang="eu" hidden><article><p>ESKUALDUNEN ISTORIA</p>
+</article></section><section data-history-lang="eu" lang="eu" hidden><article><p>ESKUALDUNEN ISTORIA</p>
 <p>—</p>
 <table>
 <colgroup>
@@ -811,7 +919,7 @@ résistance</em>.<a class="footnote-back" href="#fnref12" role="doc-backlink">�
 <li id="fn22"><p>edo pisutasuna.<a class="footnote-back" href="#fnref22" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-</article></section><section data-history-lang="be" hidden><article><p>ISTOÈRE DEUS BÀSCOUS</p>
+</article></section><section data-history-lang="be" lang="oc" hidden><article><p>ISTOÈRE DEUS BÀSCOUS</p>
 <p>—</p>
 <table>
 <colgroup>
@@ -1205,4 +1313,129 @@ nousàutis e ta la noùstẹ coumbersioû</p>
 <li id="fn2"><p>chaloupes.<a class="footnote-back" href="#fnref2" role="doc-backlink">↩︎</a></p></li>
 </ol>
 </section>
-</article></section><div class="pied">© Herria Bihotzean</div></div><script src="langues.js"></script></body></html>
+</article></section><div class="pied">© Herria Bihotzean</div></div><script src="langues.js"></script>
+<script>
+"use strict";
+
+document.addEventListener("DOMContentLoaded", () => {
+    const switcher = document.querySelector(".language-switcher");
+    if (!switcher) return;
+
+    const sticky = document.createElement("div");
+    sticky.className = "sticky-language-audio";
+
+    switcher.parentNode.insertBefore(sticky, switcher);
+    sticky.appendChild(switcher);
+
+    const controls = document.createElement("div");
+    controls.className = "audio-controls";
+    controls.innerHTML = `
+        <button type="button"
+                class="audio-open-button"
+                aria-expanded="false"
+                aria-controls="history-audio-panel">
+            écouter
+        </button>
+
+        <div class="audio-panel" id="history-audio-panel" hidden>
+            <audio id="history-audio" controls preload="metadata"></audio>
+
+            <div class="audio-language-picker"
+                 role="group"
+                 aria-label="Langue de l'enregistrement">
+                <button type="button" class="audio-language-button" data-audio-lang="fr">FR</button>
+                <button type="button" class="audio-language-button" data-audio-lang="eu">ESK</button>
+                <button type="button" class="audio-language-button" data-audio-lang="be">BE</button>
+            </div>
+        </div>
+    `;
+    sticky.appendChild(controls);
+
+    const openButton = controls.querySelector(".audio-open-button");
+    const panel = controls.querySelector(".audio-panel");
+    const player = controls.querySelector("#history-audio");
+    const audioButtons = [...controls.querySelectorAll(".audio-language-button")];
+
+    const audioFiles = {
+        fr: "audio/francais.mp3",
+        eu: "audio/basque.mp3",
+        be: "audio/bearnais.mp3"
+    };
+
+    const listenLabels = {
+        fr: "écouter",
+        eu: "entzun",
+        be: "escouta"
+    };
+
+    let audioLanguage = "fr";
+
+    function visibleTextLanguage() {
+        const visibleSection = [...document.querySelectorAll("[data-history-lang]")]
+            .find(section => !section.hidden);
+
+        return visibleSection?.dataset.historyLang || "fr";
+    }
+
+    function updateListenLabel(textLanguage) {
+        openButton.textContent = listenLabels[textLanguage] || listenLabels.fr;
+    }
+
+    function selectAudioLanguage(language, preservePlayback = false) {
+        if (!audioFiles[language]) language = "fr";
+
+        const wasPlaying = preservePlayback && !player.paused;
+        const previousTime = player.currentTime || 0;
+
+        audioLanguage = language;
+        player.src = audioFiles[language];
+        player.load();
+
+        audioButtons.forEach(button => {
+            const active = button.dataset.audioLang === language;
+            button.classList.toggle("active", active);
+            button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+
+        if (wasPlaying) {
+            player.addEventListener("loadedmetadata", function resume() {
+                player.removeEventListener("loadedmetadata", resume);
+                if (previousTime < player.duration) player.currentTime = previousTime;
+                player.play().catch(() => {});
+            });
+        }
+    }
+
+    openButton.addEventListener("click", () => {
+        const willOpen = panel.hidden;
+        panel.hidden = !willOpen;
+        openButton.setAttribute("aria-expanded", willOpen ? "true" : "false");
+
+        if (willOpen && !player.getAttribute("src")) {
+            selectAudioLanguage(visibleTextLanguage());
+        }
+    });
+
+    audioButtons.forEach(button => {
+        button.addEventListener("click", () => {
+            selectAudioLanguage(button.dataset.audioLang, false);
+        });
+    });
+
+    document.addEventListener("herria-language-change", event => {
+        const language = event.detail?.lang || visibleTextLanguage();
+        updateListenLabel(language);
+
+        /*
+         * Lorsqu'on change la langue du texte, la piste correspondante
+         * devient à nouveau la piste proposée par défaut.
+         */
+        selectAudioLanguage(language, false);
+    });
+
+    const initialLanguage = visibleTextLanguage();
+    updateListenLabel(initialLanguage);
+    selectAudioLanguage(initialLanguage, false);
+});
+</script>
+</body></html>
