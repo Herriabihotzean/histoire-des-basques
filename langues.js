@@ -20,14 +20,22 @@ const HB_LABELS={"fr": {"fr": "français", "eu": "basque", "be": "béarnais"}, "
   let observer = null;
   let applying = false;
 
-  function generalLanguage() {
+function generalLanguage() {
+    const incoming = new URLSearchParams(window.location.search).get("lang");
+
+    if (incoming === "fr" || incoming === "eu") {
+      try {
+        localStorage.setItem(HB_KEY, incoming);
+      } catch (_error) {}
+      return incoming;
+    }
+
     try {
       return localStorage.getItem(HB_KEY) === "eu" ? "eu" : "fr";
     } catch (_error) {
       return HB_DEFAULT || "fr";
     }
   }
-
   function lookup(original, language) {
     if (language === "fr") return original;
     const clean = String(original).trim();
