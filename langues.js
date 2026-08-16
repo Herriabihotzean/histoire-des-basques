@@ -205,6 +205,7 @@ function generalLanguage() {
     const initial = HB_HISTORY ? generalLanguage() : generalLanguage();
     pageLanguage = initial;
     setLanguage(initial, { silent: true });
+    document.documentElement.classList.add("hb-lang-ready");
     startObserver();
   }
 
