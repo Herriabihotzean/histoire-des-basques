@@ -2,7 +2,7 @@
 const HB_KEY="herria_langue";
 const HB_DEFAULT="fr";
 const HB_HISTORY=true;
-const HB_TRANSLATIONS={"eu": {"← retour à l’accueil": "← harrera-orrira itzuli", "haut de page ↑": "orriaren gaina ↑", "Histoire des Basques — Herria Bihotzean": "Eskualdunen istoria — Herria Bihotzean"}, "be": {"← retour à l’accueil": "← tourna à l’acuèlh", "haut de page ↑": "cap de pagine ↑", "Histoire des Basques — Herria Bihotzean": "Istoère deus Bàscous — Herria Bihotzean"}};
+const HB_TRANSLATIONS={"eu": {"← retour à l’accueil": "← harrera-orrira itzuli", "haut de page ↑": "orriaren gaina ↑", "Histoire des Basques — Herria Bihotzean": "Eskualdunen istoria — Herria Bihotzean"}, "be": {"← retour à l’accueil": "← tourna à l’acuèlh","← Retour vers Histoire": "← tourna à Istoère", "haut de page ↑": "cap de pagine ↑", "Histoire des Basques — Herria Bihotzean": "Istoère deus Bàscous — Herria Bihotzean"}};
 const HB_LABELS={"fr": {"fr": "français", "eu": "basque", "be": "béarnais"}, "eu": {"fr": "frantsesez", "eu": "eskuaraz", "be": "biarnesez"}, "be": {"fr": "francés", "eu": "bascou", "be": "biarnés"}};
 
 /* Moteur stable de sélection des langues — sans rechargement. */
