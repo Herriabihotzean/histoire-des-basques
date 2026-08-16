@@ -222,8 +222,8 @@ article > h2{
  <body>
   <div class="fond">
    <nav class="barre navigation-permanente">
-    <a class="bouton" href="https://herriabihotzean.github.io/herriabihotzean-site/">
-     ← retour à l’accueil
+    <a class="bouton" id="history-back-link" href="https://herriabihotzean.fr/histoire.html?lang=fr">
+     ← Retour vers Histoire
     </a>
     <a class="bouton" href="#haut">
      haut de page ↑
@@ -3445,5 +3445,41 @@ document.addEventListener("DOMContentLoaded", () => {
     selectAudioLanguage(initialLanguage, false);
 });
   </script>
- </body>
+ 
+<script>
+(function () {
+  "use strict";
+
+  const back = document.getElementById("history-back-link");
+  if (!back) return;
+
+  function generalLanguage() {
+    try {
+      return localStorage.getItem("herria_langue") === "eu" ? "eu" : "fr";
+    } catch (_) {
+      return "fr";
+    }
+  }
+
+  function updateHistoryBackLink() {
+    const lang = generalLanguage();
+
+    back.textContent = lang === "eu"
+      ? "← Istoriarat itzuli"
+      : "← Retour vers Histoire";
+
+    back.href =
+      "https://herriabihotzean.fr/histoire.html?lang=" + lang;
+  }
+
+  updateHistoryBackLink();
+
+  document.addEventListener(
+    "herria-language-change",
+    updateHistoryBackLink
+  );
+})();
+</script>
+
+</body>
 </html>
