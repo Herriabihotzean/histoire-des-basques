@@ -3320,9 +3320,253 @@ nousàutis e ta la noùstẹ coumbersioû
     © Herria Bihotzean
    </div>
   </div>
-  <script src="langues.js">
-  </script>
-  <script>
+
+<script>
+"use strict";
+
+/*
+ * HISTOIRE DES BASQUES
+ *
+ * Deux langues sont désormais indépendantes :
+ *
+ * 1. navigationLanguage = langue dans laquelle on est entré sur cette page
+ *    ("fr" ou "eu"). Elle ne change jamais tant que l'on reste sur cette page.
+ *
+ * 2. textLanguage = langue du texte affiché ("fr", "eu" ou "be").
+ *    Elle peut changer librement sans modifier herria_langue.
+ */
+(function () {
+    const HB_KEY = "herria_langue";
+    const TEXT_KEY = "histoire_des_basques_texte";
+
+    const params = new URLSearchParams(location.search);
+    const incoming = params.get("lang");
+
+    let navigationLanguage;
+
+    if (incoming === "eu" || incoming === "fr") {
+        navigationLanguage = incoming;
+    } else {
+        try {
+            navigationLanguage =
+                localStorage.getItem(HB_KEY) === "eu" ? "eu" : "fr";
+        } catch (_) {
+            navigationLanguage = "fr";
+        }
+    }
+
+    /*
+     * IMPORTANT :
+     * on mémorise seulement la langue générale d'entrée.
+     * Le choix FR / EU / BE effectué ensuite dans cette page
+     * ne modifiera jamais cette valeur.
+     */
+    try {
+        localStorage.setItem(HB_KEY, navigationLanguage);
+    } catch (_) {}
+
+    window.historyNavigationLanguage = navigationLanguage;
+
+    const labels = {
+        fr: { fr: "français", eu: "basque", be: "béarnais" },
+        eu: { fr: "frantsesez", eu: "eskuaraz", be: "biarnesez" }
+    };
+
+    const titles = {
+        fr: "Histoire des Basques — Herria Bihotzean",
+        eu: "Eskualdunen istoria — Herria Bihotzean",
+        be: "Istoère deus Bàscous — Herria Bihotzean"
+    };
+
+    function navigationType() {
+        const entries =
+            performance.getEntriesByType &&
+            performance.getEntriesByType("navigation");
+
+        return entries && entries[0] ? entries[0].type : "navigate";
+    }
+
+    /*
+     * Lors d'une vraie entrée depuis histoire.html :
+     * le texte s'ouvre dans la langue de navigation.
+     *
+     * Lors d'un simple rafraîchissement :
+     * on conserve la dernière langue de texte choisie.
+     */
+    let textLanguage = navigationLanguage;
+
+    if (navigationType() === "reload") {
+        try {
+            const remembered = sessionStorage.getItem(TEXT_KEY);
+            if (["fr", "eu", "be"].includes(remembered)) {
+                textLanguage = remembered;
+            }
+        } catch (_) {}
+    } else {
+        try {
+            sessionStorage.setItem(TEXT_KEY, textLanguage);
+        } catch (_) {}
+    }
+
+    function buildSwitcher() {
+        let switcher = document.querySelector(".language-switcher");
+
+        if (!switcher) {
+            switcher = document.createElement("nav");
+            switcher.className = "language-switcher";
+            switcher.setAttribute("aria-label", "Choix de la langue");
+
+            const images = {
+                fr: "blason-france.svg",
+                eu: "blason-navarre.svg",
+                be: "blason-bearn.svg"
+            };
+
+            ["fr", "eu", "be"].forEach(code => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "language-choice";
+                button.dataset.lang = code;
+
+                const img = document.createElement("img");
+                img.src = images[code];
+                img.alt = "";
+
+                const label = document.createElement("span");
+                label.className = "language-label";
+
+                button.append(img, label);
+
+                button.addEventListener("click", () => {
+                    setTextLanguage(code);
+                });
+
+                switcher.appendChild(button);
+            });
+
+            document.body.insertBefore(switcher, document.body.firstChild);
+        }
+
+        return switcher;
+    }
+
+    function updateFixedInterface() {
+        const ui = labels[navigationLanguage];
+
+        document.querySelectorAll(".language-choice").forEach(button => {
+            const code = button.dataset.lang;
+            const label = button.querySelector(".language-label");
+
+            if (label) {
+                label.textContent = ui[code] || "";
+            }
+        });
+
+        const back = document.getElementById("history-back-link");
+
+        if (back) {
+            back.textContent =
+                navigationLanguage === "eu"
+                    ? "← Istoriarat itzuli"
+                    : "← Retour vers Histoire";
+
+            back.href =
+                "https://herriabihotzean.fr/histoire.html?lang=" +
+                navigationLanguage;
+        }
+
+        const top = document.querySelector('a[href="#haut"]');
+
+        if (top) {
+            top.textContent =
+                navigationLanguage === "eu"
+                    ? "orri gainera ↑"
+                    : "haut de page ↑";
+        }
+
+        /*
+         * Si le lecteur audio a déjà été créé, son bouton principal
+         * reste lui aussi dans la langue de navigation.
+         */
+        const listen = document.querySelector(".audio-open-button");
+
+        if (listen) {
+            listen.textContent =
+                navigationLanguage === "eu" ? "entzun" : "écouter";
+        }
+    }
+
+    function setTextLanguage(language, dispatch = true) {
+        if (!["fr", "eu", "be"].includes(language)) {
+            language = navigationLanguage;
+        }
+
+        textLanguage = language;
+
+        document.querySelectorAll("[data-history-lang]").forEach(section => {
+            section.hidden = section.dataset.historyLang !== language;
+        });
+
+        document.querySelectorAll(".language-choice").forEach(button => {
+            const active = button.dataset.lang === language;
+            button.classList.toggle("active", active);
+            button.setAttribute(
+                "aria-pressed",
+                active ? "true" : "false"
+            );
+        });
+
+        document.documentElement.lang =
+            language === "eu"
+                ? "eu"
+                : language === "be"
+                    ? "oc"
+                    : "fr";
+
+        document.title = titles[language] || titles.fr;
+
+        try {
+            sessionStorage.setItem(TEXT_KEY, language);
+        } catch (_) {}
+
+        updateFixedInterface();
+
+        document.documentElement.classList.add("hb-lang-ready");
+
+        if (dispatch) {
+            document.dispatchEvent(
+                new CustomEvent("herria-language-change", {
+                    detail: { lang: language }
+                })
+            );
+
+            /*
+             * Les autres scripts peuvent réagir à l'événement.
+             * On rétablit ensuite les libellés d'interface dans
+             * la langue de navigation.
+             */
+            setTimeout(updateFixedInterface, 0);
+        }
+    }
+
+    window.historySetTextLanguage = setTextLanguage;
+    window.historyGetTextLanguage = () => textLanguage;
+    window.historyGetNavigationLanguage = () => navigationLanguage;
+
+    document.addEventListener("DOMContentLoaded", () => {
+        buildSwitcher();
+        setTextLanguage(textLanguage, false);
+
+        /*
+         * Le script audio est exécuté lui aussi à DOMContentLoaded.
+         * On repasse juste après pour garantir ses libellés.
+         */
+        setTimeout(updateFixedInterface, 0);
+    });
+})();
+</script>
+
+<script>
    "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -3445,41 +3689,5 @@ document.addEventListener("DOMContentLoaded", () => {
     selectAudioLanguage(initialLanguage, false);
 });
   </script>
- 
-<script>
-(function () {
-  "use strict";
-
-  const back = document.getElementById("history-back-link");
-  if (!back) return;
-
-  function generalLanguage() {
-    try {
-      return localStorage.getItem("herria_langue") === "eu" ? "eu" : "fr";
-    } catch (_) {
-      return "fr";
-    }
-  }
-
-  function updateHistoryBackLink() {
-    const lang = generalLanguage();
-
-    back.textContent = lang === "eu"
-      ? "← Istoriarat itzuli"
-      : "← Retour vers Histoire";
-
-    back.href =
-      "https://herriabihotzean.fr/histoire.html?lang=" + lang;
-  }
-
-  updateHistoryBackLink();
-
-  document.addEventListener(
-    "herria-language-change",
-    updateHistoryBackLink
-  );
-})();
-</script>
-
 </body>
 </html>
